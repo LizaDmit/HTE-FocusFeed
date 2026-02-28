@@ -1,0 +1,62 @@
+"use client";
+
+import Link from "next/link";
+import Avatar from "@/components/profile/Avatar";
+import { getMockConversations } from "@/lib/mock-data";
+
+const CURRENT_USER_ID = "user-1";
+
+export default function MessagesPage() {
+  const conversations = getMockConversations(CURRENT_USER_ID);
+
+  const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days > 0) return `${days}d`;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours > 0) return `${hours}h`;
+    const mins = Math.floor(diff / (1000 * 60));
+    return `${mins}m`;
+  };
+
+  return (
+    <div className="min-h-[100dvh] max-w-md mx-auto">
+      <div className="px-4 pt-6 pb-4">
+        <h1 className="text-xl font-bold text-moonDust-lavender">Messages</h1>
+      </div>
+
+      {conversations.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-12">No conversations yet</p>
+      ) : (
+        <div className="divide-y divide-dark-border">
+          {conversations.map(({ friend, lastMessage }) => (
+            <Link
+              key={friend.id}
+              href={`/messages/${friend.id}`}
+              className="flex items-center gap-3 px-4 py-3 hover:bg-dark-card/50 transition-colors"
+            >
+              <Avatar username={friend.username} size="md" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-white">@{friend.username}</p>
+                  {lastMessage && (
+                    <span className="text-[10px] text-gray-500">{formatTime(lastMessage.createdAt)}</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 truncate mt-0.5">
+                  {lastMessage
+                    ? lastMessage.sharedVideoId
+                      ? "Shared a video"
+                      : lastMessage.text
+                    : "No messages yet"}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

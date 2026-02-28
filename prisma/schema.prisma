@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VideoType {
+  SLICED_LECTURE
+  SLIDES_VOICEOVER
+  AI_TEACHER
+}
+
+enum ReactionType {
+  LIKE
+  DISLIKE
+}
+
+enum DislikeReason {
+  BAD_CONTENT
+  TOO_EASY
+  TOO_HARD
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  courses       Course[]
+  videos        Video[]
+  reactions     Reaction[]
+  comments      Comment[]
+  sentRequests  Friendship[] @relation("requester")
+  recvRequests  Friendship[] @relation("addressee")
+  sentMessages  Message[]    @relation("sender")
+  recvMessages  Message[]    @relation("receiver")
+  userCourses   UserCourse[]
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  syllabusUrl String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topics      CourseTopic[]
+  videos      Video[]
+  userCourses UserCourse[]
+}
+
+model CourseTopic {
+  id       String @id @default(cuid())
+  courseId  String
+  name     String
+  order    Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Video {
+  id           String    @id @default(cuid())
+  title        String
+  videoUrl     String
+  thumbnailUrl String?
+  subtitlesUrl String?
+  userId       String
+  courseId      String?
+  type         VideoType
+  duration     Int
+  createdAt    DateTime  @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  quizzes   Quiz[]
+  reactions Reaction[]
+  comments  Comment[]
+  shares    Message[]  @relation("sharedVideo")
+}
+
+model Quiz {
+  id            String   @id @default(cuid())
+  videoId       String
+  question      String
+  options       Json
+  correctAnswer Int
+  createdAt     DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+}
+
+model Reaction {
+  id      String        @id @default(cuid())
+  userId  String
+  videoId String
+  type    ReactionType
+  reason  DislikeReason?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  userId     String
+  videoId    String
+  text       String
+  likesCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id          String           @id @default(cuid())
+  requesterId String
+  addresseeId String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+
+  requester User @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("addressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+}
+
+model Message {
+  id            String   @id @default(cuid())
+  senderId      String
+  receiverId    String
+  text          String?
+  sharedVideoId String?
+  createdAt     DateTime @default(now())
+
+  sender      User   @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User   @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sharedVideo Video? @relation("sharedVideo", fields: [sharedVideoId], references: [id], onDelete: SetNull)
+}
+
+model UserCourse {
+  id       String  @id @default(cuid())
+  userId   String
+  courseId  String
+  visible  Boolean @default(true)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
