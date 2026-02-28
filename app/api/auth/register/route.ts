@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { registerMockUser } from "@/lib/mock-auth-store";
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +18,11 @@ export async function POST(request: Request) {
     }
 
     if (process.env.USE_MOCK_DATA === "true") {
-      return NextResponse.json({ message: "User registered (mock)" }, { status: 201 });
+      const user = registerMockUser(username, password);
+      if (!user) {
+        return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+      }
+      return NextResponse.json({ id: user.id, username: user.username }, { status: 201 });
     }
 
     const { prisma } = await import("@/lib/prisma");

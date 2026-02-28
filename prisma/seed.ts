@@ -14,14 +14,17 @@ async function main() {
   await prisma.course.deleteMany();
   await prisma.user.deleteMany();
 
+  const { hash } = await import("bcryptjs");
+  const passwordHash = await hash("password123", 10);
+
   const alice = await prisma.user.create({
-    data: { id: "user-1", username: "alice", passwordHash: "$2a$10$placeholder" },
+    data: { id: "user-1", username: "alice", passwordHash },
   });
   const bob = await prisma.user.create({
-    data: { id: "user-2", username: "bob", passwordHash: "$2a$10$placeholder" },
+    data: { id: "user-2", username: "bob", passwordHash },
   });
   const charlie = await prisma.user.create({
-    data: { id: "user-3", username: "charlie", passwordHash: "$2a$10$placeholder" },
+    data: { id: "user-3", username: "charlie", passwordHash },
   });
 
   const cs = await prisma.course.create({

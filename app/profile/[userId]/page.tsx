@@ -1,24 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Avatar from "@/components/profile/Avatar";
 import CourseList from "@/components/profile/CourseList";
 import VideoGrid from "@/components/profile/VideoGrid";
 import Tabs from "@/components/ui/Tabs";
 import Button from "@/components/ui/Button";
-import { mockUsers, getMockCoursesByUser, getMockVideosByUser, mockFriendships } from "@/lib/mock-data";
 import { IoArrowBack, IoPersonAddOutline, IoCheckmarkOutline } from "react-icons/io5";
 import Link from "next/link";
-
-const CURRENT_USER_ID = "user-1";
 
 export default function UserProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
-  const user = mockUsers.find((u) => u.id === userId);
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as { id?: string })?.id || "user-1";
+
+  const [user, setUser] = useState<{ id: string; username: string; avatarUrl: string | null } | null>(null);
+  const [courses, setCourses] = useState<{ id: string; name: string; description: string; userId: string; topics: string[] }[]>([]);
+  const [videos, setVideos] = useState<{ id: string; title: string; videoUrl: string; thumbnailUrl: string | null; userId: string; courseId: string | null; type: string; duration: number }[]>([]);
+  const [friends, setFriends] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [activeTab, setActiveTab] = useState("courses");
   const [friendAdded, setFriendAdded] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/profile?userId=${userId}`).then((r) => r.json()),
+      fetch(`/api/friends?userId=${currentUserId}`).then((r) => r.json()),
+    ])
+      .then(([profileData, friendsData]) => {
+        setUser(profileData.user);
+        setCourses(profileData.courses || []);
+        setVideos(profileData.videos || []);
+        setFriends(friendsData.map((f: { id: string }) => f.id));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [userId, currentUserId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-moonDust-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -28,14 +57,16 @@ export default function UserProfilePage() {
     );
   }
 
-  const courses = getMockCoursesByUser(userId);
-  const videos = getMockVideosByUser(userId);
-  const isFriend = mockFriendships.some(
-    (f) =>
-      f.status === "ACCEPTED" &&
-      ((f.requesterId === CURRENT_USER_ID && f.addresseeId === userId) ||
-        (f.addresseeId === CURRENT_USER_ID && f.requesterId === userId))
-  );
+  const isFriend = friends.includes(userId);
+
+  const handleAddFriend = async () => {
+    setFriendAdded(true);
+    await fetch("/api/friends", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requesterId: currentUserId, addresseeId: userId }),
+    }).catch(() => {});
+  };
 
   return (
     <div className="min-h-[100dvh] max-w-md mx-auto">
@@ -49,12 +80,12 @@ export default function UserProfilePage() {
         <Avatar username={user.username} avatarUrl={user.avatarUrl} size="xl" />
         <h2 className="text-lg font-bold text-white mt-4">@{user.username}</h2>
 
-        {!isFriend && userId !== CURRENT_USER_ID && (
+        {!isFriend && userId !== currentUserId && (
           <Button
             variant={friendAdded ? "secondary" : "primary"}
             size="sm"
             className="mt-3"
-            onClick={() => setFriendAdded(true)}
+            onClick={handleAddFriend}
             disabled={friendAdded}
           >
             {friendAdded ? (

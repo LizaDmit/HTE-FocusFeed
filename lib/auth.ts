@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { findMockUser } from "@/lib/mock-auth-store";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,14 +14,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.password) return null;
 
         if (process.env.USE_MOCK_DATA === "true") {
-          const mockUsers = [
-            { id: "user-1", username: "alice", password: "password123" },
-            { id: "user-2", username: "bob", password: "password123" },
-            { id: "user-3", username: "charlie", password: "password123" },
-          ];
-          const user = mockUsers.find(
-            (u) => u.username === credentials.username && u.password === credentials.password
-          );
+          const user = findMockUser(credentials.username, credentials.password);
           if (user) return { id: user.id, name: user.username };
           return null;
         }

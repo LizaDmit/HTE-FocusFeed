@@ -2,22 +2,19 @@
 
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { IoArrowBack, IoDocumentTextOutline, IoCheckmarkCircle } from "react-icons/io5";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import TopicEditor from "@/components/create/TopicEditor";
-import { mockCourses } from "@/lib/mock-data";
-import { useFeedStore } from "@/lib/stores/feed-store";
 
 function CreateCourseForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
-
-  const addCourse = useFeedStore((s) => s.addCourse);
-  const updateCourse = useFeedStore((s) => s.updateCourse);
-  const storeCourses = useFeedStore((s) => s.userCourses);
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as { id?: string })?.id || "user-1";
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -26,22 +23,28 @@ function CreateCourseForm() {
   const [extracting, setExtracting] = useState(false);
   const [created, setCreated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!editId) return;
-
-    const mockCourse = mockCourses.find((c) => c.id === editId);
-    const userCourse = storeCourses.find((c) => c.id === editId);
-    const course = userCourse || mockCourse;
-
-    if (course) {
-      setName(course.name);
-      setDescription(course.description || "");
-      setTopics([...course.topics]);
-      setIsEditing(true);
-    }
-  }, [editId, storeCourses]);
+    fetch(`/api/courses/${editId}`)
+      .then((r) => r.json())
+      .then((course) => {
+        if (course && !course.error) {
+          setName(course.name);
+          setDescription(course.description || "");
+          const courseTopics = course.topics
+            ? Array.isArray(course.topics[0]) || typeof course.topics[0] === "string"
+              ? course.topics
+              : course.topics.map((t: { name: string }) => t.name)
+            : [];
+          setTopics(courseTopics);
+          setIsEditing(true);
+        }
+      })
+      .catch(() => {});
+  }, [editId]);
 
   const handleSyllabusUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,24 +65,29 @@ function CreateCourseForm() {
     }, 2000);
   };
 
-  const handleSave = () => {
-    if (!name.trim()) return;
+  const handleSave = async () => {
+    if (!name.trim() || saving) return;
+    setSaving(true);
 
-    if (isEditing && editId) {
-      updateCourse(editId, { name, description, topics });
-    } else {
-      const newCourse = {
-        id: `course-user-${Date.now()}`,
-        name,
-        description,
-        userId: "user-1",
-        topics,
-      };
-      addCourse(newCourse);
+    try {
+      if (isEditing && editId) {
+        await fetch(`/api/courses/${editId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, description }),
+        });
+      } else {
+        await fetch("/api/courses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, description, topics, userId: currentUserId }),
+        });
+      }
+      setCreated(true);
+      setTimeout(() => router.push("/profile"), 1500);
+    } catch {
+      setSaving(false);
     }
-
-    setCreated(true);
-    setTimeout(() => router.push("/profile"), 1500);
   };
 
   return (
@@ -154,8 +162,8 @@ function CreateCourseForm() {
 
           <TopicEditor topics={topics} onChange={setTopics} />
 
-          <Button onClick={handleSave} disabled={!name.trim()} className="w-full" size="lg">
-            {isEditing ? "Save Changes" : "Create Course"}
+          <Button onClick={handleSave} disabled={!name.trim() || saving} className="w-full" size="lg">
+            {saving ? "Saving..." : isEditing ? "Save Changes" : "Create Course"}
           </Button>
         </div>
       )}

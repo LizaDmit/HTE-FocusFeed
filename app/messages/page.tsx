@@ -1,13 +1,29 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/profile/Avatar";
-import { getMockConversations } from "@/lib/mock-data";
+import { useSession } from "next-auth/react";
 
-const CURRENT_USER_ID = "user-1";
+interface Conversation {
+  friend: { id: string; username: string; avatarUrl: string | null };
+  lastMessage: { text: string | null; sharedVideoId: string | null; createdAt: string } | null;
+}
 
 export default function MessagesPage() {
-  const conversations = getMockConversations(CURRENT_USER_ID);
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as { id?: string })?.id || "user-1";
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/messages?userId=${currentUserId}`)
+      .then((res) => res.json())
+      .then((data) => setConversations(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [currentUserId]);
 
   const formatTime = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -20,6 +36,14 @@ export default function MessagesPage() {
     const mins = Math.floor(diff / (1000 * 60));
     return `${mins}m`;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-moonDust-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] max-w-md mx-auto">

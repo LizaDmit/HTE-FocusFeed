@@ -47,14 +47,13 @@ export default function RegisterPage() {
         redirect: false,
       });
 
-      setLoading(false);
-
       if (result?.error) {
-        setError("Account created. Please sign in.");
-        router.push("/login");
-      } else {
-        router.push("/feed");
+        setError("Account created but sign-in failed. Please sign in manually.");
+        setLoading(false);
+        return;
       }
+
+      router.push("/feed");
     } catch {
       setError("Something went wrong");
       setLoading(false);

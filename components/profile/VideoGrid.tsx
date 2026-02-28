@@ -2,23 +2,27 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { MockVideo } from "@/lib/mock-data";
 import { IoPlayOutline, IoTrashOutline, IoCloseOutline } from "react-icons/io5";
 
-interface UserVideo extends MockVideo {
+interface VideoItem {
+  id: string;
+  title: string;
+  videoUrl: string;
+  thumbnailUrl?: string | null;
+  duration: number;
   blobUrl?: string;
 }
 
 interface VideoGridProps {
-  videos: (MockVideo | UserVideo)[];
+  videos: VideoItem[];
   onDelete?: (id: string) => void;
 }
 
-function VideoThumbnail({ video }: { video: MockVideo | UserVideo }) {
+function VideoThumbnail({ video }: { video: VideoItem }) {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const videoSrc = ("blobUrl" in video && video.blobUrl) || video.videoUrl;
+  const videoSrc = video.blobUrl || video.videoUrl;
 
   const captureThumbnail = useCallback(() => {
     const el = document.createElement("video");

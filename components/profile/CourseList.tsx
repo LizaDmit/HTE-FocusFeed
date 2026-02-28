@@ -1,28 +1,34 @@
 "use client";
 
-import { MockCourse } from "@/lib/mock-data";
-import { useFeedStore } from "@/lib/stores/feed-store";
 import { IoEllipsisHorizontal, IoTrashOutline } from "react-icons/io5";
 import Link from "next/link";
 
+interface Course {
+  id: string;
+  name: string;
+  description: string;
+  userId: string;
+  topics: string[];
+}
+
 interface CourseListProps {
-  courses: MockCourse[];
+  courses: Course[];
   editable?: boolean;
 }
 
 export default function CourseList({ courses, editable = false }: CourseListProps) {
-  const userCourses = useFeedStore((s) => s.userCourses);
-  const removeCourse = useFeedStore((s) => s.removeCourse);
+  const handleDelete = async (id: string) => {
+    await fetch(`/api/courses/${id}`, { method: "DELETE" });
+    window.location.reload();
+  };
 
-  const allCourses = [...courses, ...userCourses.filter((uc) => !courses.some((c) => c.id === uc.id))];
-
-  if (allCourses.length === 0) {
+  if (courses.length === 0) {
     return <p className="text-sm text-gray-400 text-center py-8">No courses yet</p>;
   }
 
   return (
     <div className="space-y-2 p-4">
-      {allCourses.map((course) => (
+      {courses.map((course) => (
         <div
           key={course.id}
           className="p-4 bg-dark-card rounded-xl border border-dark-border flex items-center justify-between"
@@ -40,7 +46,7 @@ export default function CourseList({ courses, editable = false }: CourseListProp
                 <IoEllipsisHorizontal size={18} />
               </Link>
               <button
-                onClick={() => removeCourse(course.id)}
+                onClick={() => handleDelete(course.id)}
                 className="text-gray-400 hover:text-red-400 p-1"
               >
                 <IoTrashOutline size={18} />

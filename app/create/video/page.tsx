@@ -3,10 +3,10 @@
 import { useState, useRef } from "react";
 import { IoCloudUploadOutline, IoCheckmarkCircle, IoArrowBack } from "react-icons/io5";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import Button from "@/components/ui/Button";
 import Toggle from "@/components/ui/Toggle";
 import Input from "@/components/ui/Input";
-import { useFeedStore } from "@/lib/stores/feed-store";
 
 type Step = "upload" | "options" | "processing";
 type VideoType = "SLICED_LECTURE" | "SLIDES_VOICEOVER" | "AI_TEACHER";
@@ -29,7 +29,8 @@ export default function CreateVideoPage() {
 
   const [processProgress, setProcessProgress] = useState(0);
 
-  const addVideo = useFeedStore((s) => s.addVideo);
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as { id?: string })?.id || "user-1";
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -84,18 +85,17 @@ export default function CreateVideoPage() {
       setProcessProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
-          const videoId = `video-user-${Date.now()}`;
-          addVideo({
-            id: videoId,
-            title: title || file?.name || "Uploaded Video",
-            videoUrl: blobUrl || "",
-            thumbnailUrl: null,
-            userId: "user-1",
-            courseId: "course-1",
-            type: videoType,
-            duration: duration || 30,
-            blobUrl: blobUrl || undefined,
-          });
+          fetch("/api/videos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: title || file?.name || "Uploaded Video",
+              videoUrl: blobUrl || "/sample-videos/sample1.mp4",
+              userId: currentUserId,
+              type: videoType,
+              duration: duration || 30,
+            }),
+          }).catch(() => {});
           return 100;
         }
         return prev + Math.random() * 5;

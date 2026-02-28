@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { IoHomeOutline, IoHome, IoAddCircleOutline, IoAddCircle, IoChatbubbleOutline, IoChatbubble, IoPersonOutline, IoPerson } from "react-icons/io5";
 
@@ -13,6 +14,9 @@ const tabs = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { status } = useSession();
+
+  if (status !== "authenticated") return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-card/95 backdrop-blur-md border-t border-dark-border safe-bottom">

@@ -4,27 +4,80 @@ import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Avatar from "@/components/profile/Avatar";
-import { mockUsers, getMockConversations, mockVideos, MockMessage } from "@/lib/mock-data";
+import { useSession } from "next-auth/react";
 import { IoArrowBack, IoSendOutline, IoPlayCircleOutline } from "react-icons/io5";
 
-const CURRENT_USER_ID = "user-1";
+interface ChatMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  text: string | null;
+  sharedVideoId: string | null;
+  createdAt: string;
+  sharedVideo?: { id: string; title: string } | null;
+}
 
 export default function ChatPage() {
   const params = useParams();
   const friendId = params.friendId as string;
-  const friend = mockUsers.find((u) => u.id === friendId);
-  const conversations = getMockConversations(CURRENT_USER_ID);
-  const convo = conversations.find((c) => c.friend.id === friendId);
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as { id?: string })?.id || "user-1";
 
-  const [messages, setMessages] = useState<MockMessage[]>(
-    convo?.messages.slice().reverse() || []
-  );
+  const [friend, setFriend] = useState<{ id: string; username: string; avatarUrl: string | null } | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    Promise.all([
+      fetch(`/api/messages/${friendId}?userId=${currentUserId}`).then((r) => r.json()),
+      fetch(`/api/profile?userId=${friendId}`).then((r) => r.json()),
+    ])
+      .then(([msgs, profile]) => {
+        setMessages(msgs);
+        setFriend(profile.user || { id: friendId, username: friendId, avatarUrl: null });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [friendId, currentUserId]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleSend = async () => {
+    if (!text.trim()) return;
+    const body = { userId: currentUserId, text: text.trim(), sharedVideoId: null };
+    const optimistic: ChatMessage = {
+      id: `msg-temp-${Date.now()}`,
+      senderId: currentUserId,
+      receiverId: friendId,
+      text: text.trim(),
+      sharedVideoId: null,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setText("");
+
+    try {
+      const res = await fetch(`/api/messages/${friendId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const saved = await res.json();
+      setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? saved : m)));
+    } catch {}
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-moonDust-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!friend) {
     return (
@@ -33,20 +86,6 @@ export default function ChatPage() {
       </div>
     );
   }
-
-  const handleSend = () => {
-    if (!text.trim()) return;
-    const msg: MockMessage = {
-      id: `msg-new-${Date.now()}`,
-      senderId: CURRENT_USER_ID,
-      receiverId: friendId,
-      text: text.trim(),
-      sharedVideoId: null,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, msg]);
-    setText("");
-  };
 
   return (
     <div className="flex flex-col h-[100dvh] max-w-md mx-auto">
@@ -62,10 +101,7 @@ export default function ChatPage() {
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((msg) => {
-          const isMine = msg.senderId === CURRENT_USER_ID;
-          const sharedVideo = msg.sharedVideoId
-            ? mockVideos.find((v) => v.id === msg.sharedVideoId)
-            : null;
+          const isMine = msg.senderId === currentUserId;
 
           return (
             <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
@@ -77,15 +113,15 @@ export default function ChatPage() {
                 }`}
               >
                 {msg.text && <p>{msg.text}</p>}
-                {sharedVideo && (
+                {msg.sharedVideo && (
                   <Link
-                    href={`/feed?videoId=${sharedVideo.id}`}
+                    href={`/feed?videoId=${msg.sharedVideo.id}`}
                     className={`mt-1 flex items-center gap-2 p-2 rounded-lg ${
                       isMine ? "bg-black/10" : "bg-dark border border-dark-border"
                     }`}
                   >
                     <IoPlayCircleOutline size={20} className={isMine ? "text-dark" : "text-moonDust-blue"} />
-                    <span className="text-xs truncate">{sharedVideo.title}</span>
+                    <span className="text-xs truncate">{msg.sharedVideo.title}</span>
                   </Link>
                 )}
               </div>

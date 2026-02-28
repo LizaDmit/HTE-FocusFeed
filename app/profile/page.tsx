@@ -1,32 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Avatar from "@/components/profile/Avatar";
 import FriendSearch from "@/components/profile/FriendSearch";
 import CourseList from "@/components/profile/CourseList";
 import VideoGrid from "@/components/profile/VideoGrid";
 import Tabs from "@/components/ui/Tabs";
-import { mockUsers, getMockCoursesByUser, getMockVideosByUser, getMockFriends } from "@/lib/mock-data";
-import { useFeedStore } from "@/lib/stores/feed-store";
 import { IoPencilOutline, IoPeopleOutline, IoChevronDownOutline, IoChevronUpOutline, IoLogOutOutline } from "react-icons/io5";
-import { signOut } from "next-auth/react";
-
-const CURRENT_USER_ID = "user-1";
+import { signOut, useSession } from "next-auth/react";
 
 export default function ProfilePage() {
-  const user = mockUsers.find((u) => u.id === CURRENT_USER_ID)!;
-  const courses = getMockCoursesByUser(CURRENT_USER_ID);
-  const mockVideos = getMockVideosByUser(CURRENT_USER_ID);
-  const friends = getMockFriends(CURRENT_USER_ID);
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as { id?: string })?.id || "user-1";
 
-  const userVideos = useFeedStore((s) => s.userVideos);
-  const removeVideo = useFeedStore((s) => s.removeVideo);
-  const allVideos = [...userVideos.filter((v) => v.userId === CURRENT_USER_ID).reverse(), ...mockVideos];
+  const [user, setUser] = useState<{ id: string; username: string; avatarUrl: string | null } | null>(null);
+  const [courses, setCourses] = useState<{ id: string; name: string; description: string; userId: string; topics: string[] }[]>([]);
+  const [videos, setVideos] = useState<{ id: string; title: string; videoUrl: string; thumbnailUrl: string | null; userId: string; courseId: string | null; type: string; duration: number }[]>([]);
+  const [friends, setFriends] = useState<{ id: string; username: string; avatarUrl: string | null }[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState("courses");
   const [showFriends, setShowFriends] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [username, setUsername] = useState(user.username);
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    fetch(`/api/profile?userId=${currentUserId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setUser(data.user);
+        setCourses(data.courses || []);
+        setVideos(data.videos || []);
+        setFriends(data.friends || []);
+        setUsername(data.user?.username || "");
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [currentUserId]);
+
+  const handleDeleteVideo = async (id: string) => {
+    await fetch(`/api/videos/${id}`, { method: "DELETE" });
+    setVideos((prev) => prev.filter((v) => v.id !== id));
+  };
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-moonDust-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-[100dvh] max-w-md mx-auto overflow-y-auto pb-4">
@@ -72,12 +95,11 @@ export default function ProfilePage() {
         {showFriends && (
           <div className="w-full mt-4">
             <FriendSearch
-              currentUserId={CURRENT_USER_ID}
+              currentUserId={currentUserId}
               friendIds={friends.map((f) => f.id)}
             />
           </div>
         )}
-
       </div>
 
       <Tabs
@@ -92,7 +114,7 @@ export default function ProfilePage() {
       {activeTab === "courses" ? (
         <CourseList courses={courses} editable />
       ) : (
-        <VideoGrid videos={allVideos} onDelete={removeVideo} />
+        <VideoGrid videos={videos} onDelete={handleDeleteVideo} />
       )}
     </div>
   );

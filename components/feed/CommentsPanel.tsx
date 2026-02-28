@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
-import { getMockCommentsByVideo } from "@/lib/mock-data";
 import { IoSendOutline, IoHeartOutline } from "react-icons/io5";
+
+interface Comment {
+  id: string;
+  text: string;
+  likesCount: number;
+  user: { username: string };
+}
 
 interface Props {
   open: boolean;
@@ -13,11 +19,27 @@ interface Props {
 
 export default function CommentsPanel({ open, onClose, videoId }: Props) {
   const [newComment, setNewComment] = useState("");
-  const comments = videoId ? getMockCommentsByVideo(videoId) : [];
+  const [comments, setComments] = useState<Comment[]>([]);
 
-  const handleSend = () => {
-    if (!newComment.trim()) return;
-    console.log("New comment:", videoId, newComment);
+  useEffect(() => {
+    if (!open || !videoId) return;
+    fetch(`/api/comments?videoId=${videoId}`)
+      .then((r) => r.json())
+      .then((data) => setComments(data))
+      .catch(() => {});
+  }, [open, videoId]);
+
+  const handleSend = async () => {
+    if (!newComment.trim() || !videoId) return;
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: "user-1", videoId, text: newComment.trim() }),
+      });
+      const saved = await res.json();
+      setComments((prev) => [...prev, { ...saved, user: saved.user || { username: "you" } }]);
+    } catch {}
     setNewComment("");
   };
 

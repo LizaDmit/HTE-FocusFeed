@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Input from "@/components/ui/Input";
 import Avatar from "./Avatar";
-import { mockUsers } from "@/lib/mock-data";
 import { IoAddOutline, IoCheckmarkOutline } from "react-icons/io5";
+
+interface User {
+  id: string;
+  username: string;
+  avatarUrl: string | null;
+}
 
 interface FriendSearchProps {
   currentUserId: string;
@@ -13,15 +18,32 @@ interface FriendSearchProps {
 
 export default function FriendSearch({ currentUserId, friendIds }: FriendSearchProps) {
   const [query, setQuery] = useState("");
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [added, setAdded] = useState<string[]>([]);
 
+  useEffect(() => {
+    fetch("/api/users")
+      .then((r) => r.json())
+      .then((data) => setAllUsers(data))
+      .catch(() => {});
+  }, []);
+
   const results = query.trim()
-    ? mockUsers.filter(
+    ? allUsers.filter(
         (u) => u.id !== currentUserId && u.username.toLowerCase().includes(query.toLowerCase())
       )
     : [];
 
   const noResults = query.trim().length > 0 && results.length === 0;
+
+  const handleAdd = async (userId: string) => {
+    setAdded((prev) => [...prev, userId]);
+    await fetch("/api/friends", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requesterId: currentUserId, addresseeId: userId }),
+    }).catch(() => {});
+  };
 
   return (
     <div className="space-y-3">
@@ -54,7 +76,7 @@ export default function FriendSearch({ currentUserId, friendIds }: FriendSearchP
               </span>
             ) : (
               <button
-                onClick={() => setAdded((prev) => [...prev, user.id])}
+                onClick={() => handleAdd(user.id)}
                 className="text-moonDust-blue hover:text-moonDust-lavender p-1"
               >
                 <IoAddOutline size={20} />

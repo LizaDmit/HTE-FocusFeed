@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { usePreferences } from "@/lib/stores/preferences";
-import { mockCourses } from "@/lib/mock-data";
 import { IoAddOutline, IoCheckmarkOutline } from "react-icons/io5";
+
+interface Course {
+  id: string;
+  name: string;
+  topics: { name: string }[] | string[];
+}
 
 interface Props {
   open: boolean;
@@ -15,13 +20,27 @@ interface Props {
 
 export default function CourseSearchModal({ open, onClose }: Props) {
   const [query, setQuery] = useState("");
-  const { courses, addCourse } = usePreferences();
+  const { courses: addedCourses, addCourse } = usePreferences();
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/courses")
+      .then((r) => r.json())
+      .then((data) => setAllCourses(data))
+      .catch(() => {});
+  }, [open]);
 
   const results = query.trim()
-    ? mockCourses.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
-    : mockCourses;
+    ? allCourses.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
+    : allCourses;
 
-  const isAdded = (id: string) => courses.some((c) => c.id === id);
+  const isAdded = (id: string) => addedCourses.some((c) => c.id === id);
+
+  const getTopicCount = (course: Course) => {
+    if (!course.topics) return 0;
+    return course.topics.length;
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Add Course to Feed" position="bottom">
@@ -43,7 +62,7 @@ export default function CourseSearchModal({ open, onClose }: Props) {
               >
                 <div>
                   <p className="text-sm text-white font-medium">{course.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{course.topics.length} topics</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{getTopicCount(course)} topics</p>
                 </div>
                 {isAdded(course.id) ? (
                   <span className="text-moonDust-blue">

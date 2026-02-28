@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
-import { getMockFriends } from "@/lib/mock-data";
 import { IoLinkOutline, IoCheckmarkOutline, IoSendOutline } from "react-icons/io5";
+
+interface Friend {
+  id: string;
+  username: string;
+  avatarUrl: string | null;
+}
 
 interface Props {
   open: boolean;
@@ -13,8 +18,15 @@ interface Props {
 
 export default function ShareModal({ open, onClose, videoId }: Props) {
   const [copied, setCopied] = useState(false);
-  const currentUserId = "user-1";
-  const friends = getMockFriends(currentUserId);
+  const [friends, setFriends] = useState<Friend[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/friends?userId=user-1")
+      .then((r) => r.json())
+      .then((data) => setFriends(data))
+      .catch(() => {});
+  }, [open]);
 
   const copyLink = () => {
     const url = `${window.location.origin}/feed?videoId=${videoId}`;
@@ -24,8 +36,12 @@ export default function ShareModal({ open, onClose, videoId }: Props) {
     });
   };
 
-  const sendToFriend = (friendId: string) => {
-    console.log("Share video", videoId, "to friend", friendId);
+  const sendToFriend = async (friendId: string) => {
+    await fetch(`/api/messages/${friendId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: "user-1", sharedVideoId: videoId }),
+    }).catch(() => {});
     onClose();
   };
 
