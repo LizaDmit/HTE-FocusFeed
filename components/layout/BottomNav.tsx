@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { IoHomeOutline, IoHome, IoAddCircleOutline, IoAddCircle, IoChatbubbleOutline, IoChatbubble, IoPersonOutline, IoPerson } from "react-icons/io5";
+import { useNotifications } from "@/lib/stores/notifications";
 
 const tabs = [
   { href: "/feed", label: "Feed", icon: IoHomeOutline, activeIcon: IoHome },
@@ -14,7 +16,20 @@ const tabs = [
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const { setPendingCount, hasUnseen } = useNotifications();
+  const showDot = hasUnseen();
+  const currentUserId = (session?.user as { id?: string })?.id;
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    fetch(`/api/friends/requests?userId=${currentUserId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setPendingCount(data.length);
+      })
+      .catch(() => {});
+  }, [currentUserId, setPendingCount]);
 
   if (status !== "authenticated") return null;
 
@@ -24,16 +39,20 @@ export default function BottomNav() {
         {tabs.map((tab) => {
           const isActive = pathname.startsWith(tab.href);
           const Icon = isActive ? tab.activeIcon : tab.icon;
+          const isProfile = tab.href === "/profile";
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 transition-colors ${
+              className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 transition-colors ${
                 isActive ? "text-moonDust-blue" : "text-gray-400 hover:text-moonDust-lavender"
               }`}
             >
               <Icon size={22} />
               <span className="text-[10px] font-medium">{tab.label}</span>
+              {isProfile && showDot && (
+                <span className="absolute top-0.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full" />
+              )}
             </Link>
           );
         })}

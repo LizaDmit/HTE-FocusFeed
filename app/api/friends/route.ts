@@ -32,6 +32,26 @@ export async function POST(request: Request) {
   }
 
   const { prisma } = await import("@/lib/prisma");
+
+  const reverse = await prisma.friendship.findFirst({
+    where: { requesterId: addresseeId, addresseeId: requesterId, status: "PENDING" },
+  });
+
+  if (reverse) {
+    const updated = await prisma.friendship.update({
+      where: { id: reverse.id },
+      data: { status: "ACCEPTED" },
+    });
+    return NextResponse.json(updated, { status: 200 });
+  }
+
+  const existing = await prisma.friendship.findFirst({
+    where: { requesterId, addresseeId },
+  });
+  if (existing) {
+    return NextResponse.json(existing, { status: 200 });
+  }
+
   const friendship = await prisma.friendship.create({
     data: { requesterId, addresseeId },
   });
