@@ -1,0 +1,24 @@
+{"sessionId":"1d854d","location":"Providers.tsx:mount","message":"Providers mounted","data":{},"timestamp":1772314311808,"hypothesisId":"H2"}
+{"sessionId":"1d854d","location":"Providers.tsx:mount","message":"Providers mounted","data":{},"timestamp":1772314311809,"hypothesisId":"H2"}
+{"sessionId":"1d854d","location":"Providers.tsx:mount","message":"Providers mounted","data":{},"timestamp":1772314333892,"hypothesisId":"H2"}
+{"sessionId":"1d854d","location":"Providers.tsx:mount","message":"Providers mounted","data":{},"timestamp":1772314333892,"hypothesisId":"H2"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:FeedContent","message":"FeedContent mounted","data":{},"timestamp":1772314344150,"hypothesisId":"H2,H4"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:FeedContent","message":"FeedContent mounted","data":{},"timestamp":1772314344150,"hypothesisId":"H2,H4"}
+{"sessionId":"1d854d","location":"app/api/feed/route.ts:GET","message":"feed API entered","data":{"url":"http://localhost:3000/api/feed?limit=50&courseIds=cmm6pot4p000ectxikmulybn3%2Ccourse-2%2Ccourse-1"},"timestamp":1772314344224,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/api/feed/route.ts:return","message":"feed API success","data":{"totalItems":13,"returnedCount":13},"timestamp":1772314344238,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:fetchFeed","message":"feed response","data":{"ok":true,"status":200},"timestamp":1772314344240,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/api/feed/route.ts:GET","message":"feed API entered","data":{"url":"http://localhost:3000/api/feed?limit=50&courseIds=cmm6pot4p000ectxikmulybn3%2Ccourse-2%2Ccourse-1"},"timestamp":1772314344242,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:data","message":"feed data","data":{"hasItems":true,"itemCount":13},"timestamp":1772314344241,"hypothesisId":"H5"}
+{"sessionId":"1d854d","location":"app/api/feed/route.ts:return","message":"feed API success","data":{"totalItems":13,"returnedCount":13},"timestamp":1772314344256,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:fetchFeed","message":"feed response","data":{"ok":true,"status":200},"timestamp":1772314344265,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:data","message":"feed data","data":{"hasItems":true,"itemCount":13},"timestamp":1772314344267,"hypothesisId":"H5"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:FeedContent","message":"FeedContent mounted","data":{},"timestamp":1772314359741,"hypothesisId":"H2,H4"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:FeedContent","message":"FeedContent mounted","data":{},"timestamp":1772314359741,"hypothesisId":"H2,H4"}
+{"sessionId":"1d854d","location":"app/api/feed/route.ts:GET","message":"feed API entered","data":{"url":"http://localhost:3000/api/feed?limit=50"},"timestamp":1772314359769,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/api/feed/route.ts:return","message":"feed API success","data":{"totalItems":15,"returnedCount":15},"timestamp":1772314359777,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:fetchFeed","message":"feed response","data":{"ok":true,"status":200},"timestamp":1772314359779,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:data","message":"feed data","data":{"hasItems":true,"itemCount":15},"timestamp":1772314359780,"hypothesisId":"H5"}
+{"sessionId":"1d854d","location":"app/api/feed/route.ts:GET","message":"feed API entered","data":{"url":"http://localhost:3000/api/feed?limit=50"},"timestamp":1772314359834,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/api/feed/route.ts:return","message":"feed API success","data":{"totalItems":15,"returnedCount":15},"timestamp":1772314359846,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:fetchFeed","message":"feed response","data":{"ok":true,"status":200},"timestamp":1772314359847,"hypothesisId":"H1"}
+{"sessionId":"1d854d","location":"app/feed/page.tsx:data","message":"feed data","data":{"hasItems":true,"itemCount":15},"timestamp":1772314359848,"hypothesisId":"H5"}

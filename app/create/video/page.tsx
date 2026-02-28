@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { IoCloudUploadOutline, IoCheckmarkCircle, IoArrowBack, IoChevronDown } from "react-icons/io5";
+import { IoCloudUploadOutline, IoCheckmarkCircle, IoArrowBack, IoChevronDown, IoDocumentOutline } from "react-icons/io5";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Button from "@/components/ui/Button";
@@ -17,13 +17,16 @@ interface CourseOption {
   topics: { name: string }[];
 }
 
+const NEEDS_SLIDES: VideoType[] = ["SLIDES_VOICEOVER", "AI_TEACHER"];
+
 export default function CreateVideoPage() {
   const [step, setStep] = useState<Step>("upload");
   const [file, setFile] = useState<File | null>(null);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploaded, setUploaded] = useState(false);
   const [duration, setDuration] = useState(0);
+
+  const [slidesFile, setSlidesFile] = useState<File | null>(null);
 
   const [sliceVideo, setSliceVideo] = useState(false);
   const [generateSubtitles, setGenerateSubtitles] = useState(true);
@@ -40,11 +43,16 @@ export default function CreateVideoPage() {
   const [topicDropdownOpen, setTopicDropdownOpen] = useState(false);
 
   const [processProgress, setProcessProgress] = useState(0);
+  const [processStage, setProcessStage] = useState("Starting...");
+  const [processError, setProcessError] = useState<string | null>(null);
+  const [processDone, setProcessDone] = useState(false);
+  const [createdCount, setCreatedCount] = useState(0);
 
   const { data: session } = useSession();
   const currentUserId = (session?.user as { id?: string })?.id || "user-1";
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const slidesInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -74,21 +82,26 @@ export default function CreateVideoPage() {
     if (!selected) return;
     setFile(selected);
 
-    const objectUrl = URL.createObjectURL(selected);
-    setBlobUrl(objectUrl);
-
     const nameWithoutExt = selected.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
     setTitle(nameWithoutExt);
 
     const video = document.createElement("video");
     video.preload = "metadata";
+    const objectUrl = URL.createObjectURL(selected);
     video.onloadedmetadata = () => {
       setDuration(Math.floor(video.duration));
       if (video.duration > 180) setSliceVideo(true);
+      URL.revokeObjectURL(objectUrl);
     };
     video.src = objectUrl;
 
     simulateUpload();
+  };
+
+  const handleSlidesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    setSlidesFile(selected);
   };
 
   const simulateUpload = () => {
@@ -105,42 +118,100 @@ export default function CreateVideoPage() {
     }, 200);
   };
 
+  const slidesRequired = NEEDS_SLIDES.includes(videoType);
+
   const canContinue =
     step === "upload" ? uploaded :
-    step === "options" ? !!selectedCourseId && !!title.trim() :
+    step === "options" ? (
+      !!selectedCourseId &&
+      !!title.trim() &&
+      (!slidesRequired || !!slidesFile)
+    ) :
     false;
 
   const handleContinue = () => {
     if (step === "upload" && uploaded) setStep("options");
-    else if (step === "options" && selectedCourseId) {
+    else if (step === "options" && canContinue) {
       setStep("processing");
-      simulateProcessing();
+      startRealProcessing();
     }
   };
 
-  const simulateProcessing = () => {
+  const startRealProcessing = async () => {
     setProcessProgress(0);
-    const interval = setInterval(() => {
-      setProcessProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          fetch("/api/videos", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: title || file?.name || "Uploaded Video",
-              videoUrl: blobUrl || "/sample-videos/sample1.mp4",
-              userId: currentUserId,
-              courseId: selectedCourseId,
-              type: videoType,
-              duration: duration || 30,
-            }),
-          }).catch(() => {});
-          return 100;
-        }
-        return prev + Math.random() * 5;
+    setProcessStage("Uploading files...");
+    setProcessError(null);
+    setProcessDone(false);
+
+    const formData = new FormData();
+
+    if (file) formData.append("video", file);
+    if (slidesFile) formData.append("slides", slidesFile);
+
+    formData.append(
+      "options",
+      JSON.stringify({
+        title: title || file?.name || "Uploaded Video",
+        userId: currentUserId,
+        courseId: selectedCourseId,
+        videoType,
+        duration: duration || 30,
+        topics: selectedTopics,
+      })
+    );
+
+    if (videoType === "OTHER") {
+      setProcessProgress(30);
+      setProcessStage("Saving video...");
+    } else {
+      setProcessProgress(10);
+      setProcessStage("Running content pipeline...");
+    }
+
+    const progressTimer = videoType !== "OTHER"
+      ? setInterval(() => {
+          setProcessProgress((prev) => {
+            if (prev >= 90) return prev;
+            const increment = prev < 30 ? 2 : prev < 60 ? 1 : 0.5;
+            const newVal = prev + increment;
+            if (newVal < 30) setProcessStage("Transcribing audio...");
+            else if (newVal < 50) setProcessStage("Segmenting topics...");
+            else if (newVal < 70) setProcessStage("Generating reel scripts...");
+            else if (newVal < 85) setProcessStage("Producing reel videos...");
+            else setProcessStage("Finalizing...");
+            return newVal;
+          });
+        }, 2000)
+      : null;
+
+    try {
+      const res = await fetch("/api/process/video", {
+        method: "POST",
+        body: formData,
       });
-    }, 500);
+
+      if (progressTimer) clearInterval(progressTimer);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Request failed" }));
+        const detail = data.detail ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail)).slice(0, 1200) : "";
+        setProcessError(detail ? `${data.error || "Processing failed"}: ${detail}` : (data.error || "Processing failed"));
+        setProcessProgress(0);
+        setProcessStage("Failed");
+        return;
+      }
+
+      const data = await res.json();
+      setProcessProgress(100);
+      setProcessStage("Complete!");
+      setProcessDone(true);
+      setCreatedCount(data.videos?.length || 0);
+    } catch (err) {
+      if (progressTimer) clearInterval(progressTimer);
+      setProcessError(err instanceof Error ? err.message : "Processing failed");
+      setProcessProgress(0);
+      setProcessStage("Failed");
+    }
   };
 
   const videoTypes: { id: VideoType; label: string; desc: string }[] = [
@@ -272,7 +343,7 @@ export default function CreateVideoPage() {
             </div>
           </section>
 
-          {/* Topic multi-select (only if course has topics) */}
+          {/* Topic multi-select */}
           {selectedCourseId && courseTopics.length > 0 && (
             <section>
               <p className="text-sm font-semibold text-moonDust-purple mb-2">Topics</p>
@@ -328,17 +399,6 @@ export default function CreateVideoPage() {
             </section>
           )}
 
-          {duration > 180 && (
-            <div className="p-4 rounded-xl bg-moonDust-blue/10 border border-moonDust-blue/20">
-              <Toggle enabled={sliceVideo} onChange={setSliceVideo} label="Slice Video" />
-              <p className="text-xs text-gray-400 mt-2 ml-14">
-                Your video is over 3 minutes. It will be automatically split into shorter clips for better engagement.
-              </p>
-            </div>
-          )}
-
-          <Toggle enabled={generateSubtitles} onChange={setGenerateSubtitles} label="Generate Subtitles" />
-
           <section>
             <p className="text-sm font-semibold text-moonDust-purple mb-3">Video Type</p>
             <div className="space-y-2">
@@ -358,6 +418,56 @@ export default function CreateVideoPage() {
               ))}
             </div>
           </section>
+
+          {/* Slides PDF upload */}
+          {videoType !== "OTHER" && (
+            <section>
+              <p className="text-sm font-semibold text-moonDust-purple mb-2">
+                Slides PDF {slidesRequired ? <span className="text-red-400">*</span> : "(optional)"}
+              </p>
+              <input
+                ref={slidesInputRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={handleSlidesSelect}
+              />
+              {slidesFile ? (
+                <div className="p-3 rounded-xl bg-dark-card border border-moonDust-blue/30 flex items-center gap-3">
+                  <IoDocumentOutline size={20} className="text-moonDust-blue shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white truncate">{slidesFile.name}</p>
+                    <p className="text-xs text-gray-400">{(slidesFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+                  </div>
+                  <button
+                    onClick={() => setSlidesFile(null)}
+                    className="text-xs text-red-400 hover:text-red-300"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => slidesInputRef.current?.click()}
+                  className="w-full p-4 rounded-xl border-2 border-dashed border-dark-border hover:border-moonDust-blue/40 bg-dark-card flex items-center justify-center gap-2 transition-colors"
+                >
+                  <IoDocumentOutline size={20} className="text-gray-400" />
+                  <span className="text-sm text-gray-400">Upload Slides PDF</span>
+                </button>
+              )}
+            </section>
+          )}
+
+          {duration > 180 && videoType === "SLICED_LECTURE" && (
+            <div className="p-4 rounded-xl bg-moonDust-blue/10 border border-moonDust-blue/20">
+              <Toggle enabled={sliceVideo} onChange={setSliceVideo} label="Slice Video" />
+              <p className="text-xs text-gray-400 mt-2 ml-14">
+                Your video is over 3 minutes. It will be automatically split into shorter clips for better engagement.
+              </p>
+            </div>
+          )}
+
+          <Toggle enabled={generateSubtitles} onChange={setGenerateSubtitles} label="Generate Subtitles" />
 
           {videoType === "AI_TEACHER" && (
             <section className="space-y-3">
@@ -384,32 +494,51 @@ export default function CreateVideoPage() {
 
       {step === "processing" && (
         <div className="flex flex-col items-center justify-center py-20 space-y-6">
-          <div className="relative w-24 h-24">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="#2a2a3e" strokeWidth="6" />
-              <circle
-                cx="50" cy="50" r="45" fill="none" stroke="#80A8FF" strokeWidth="6" strokeLinecap="round"
-                strokeDasharray={`${Math.min(processProgress, 100) * 2.83} 283`}
-                className="transition-all duration-500"
-              />
-            </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-moonDust-blue">
-              {Math.min(Math.floor(processProgress), 100)}%
-            </span>
-          </div>
-          <div className="text-center">
-            <p className="text-white font-semibold">Processing your video...</p>
-            <p className="text-sm text-gray-400 mt-1">
-              {processProgress < 30 ? "Transcribing audio..." :
-               processProgress < 60 ? "Segmenting topics..." :
-               processProgress < 85 ? "Generating content..." :
-               processProgress < 100 ? "Finalizing..." : "Complete!"}
-            </p>
-          </div>
-          {processProgress >= 100 && (
-            <Link href="/feed">
-              <Button size="lg">View in Feed</Button>
-            </Link>
+          {processError ? (
+            <>
+              <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
+                <span className="text-red-400 text-2xl font-bold">!</span>
+              </div>
+              <div className="text-center">
+                <p className="text-red-400 font-semibold">Processing Failed</p>
+                <p className="text-sm text-gray-400 mt-2 max-w-md max-h-40 overflow-y-auto text-left">{processError}</p>
+              </div>
+              <Button variant="secondary" onClick={() => { setStep("options"); setProcessError(null); }}>
+                Try Again
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="relative w-24 h-24">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="#2a2a3e" strokeWidth="6" />
+                  <circle
+                    cx="50" cy="50" r="45" fill="none" stroke="#80A8FF" strokeWidth="6" strokeLinecap="round"
+                    strokeDasharray={`${Math.min(processProgress, 100) * 2.83} 283`}
+                    className="transition-all duration-500"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-moonDust-blue">
+                  {Math.min(Math.floor(processProgress), 100)}%
+                </span>
+              </div>
+              <div className="text-center">
+                <p className="text-white font-semibold">
+                  {processDone ? "Processing Complete!" : "Processing your video..."}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">{processStage}</p>
+                {processDone && createdCount > 0 && (
+                  <p className="text-sm text-moonDust-blue mt-2">
+                    {createdCount} reel{createdCount > 1 ? "s" : ""} created
+                  </p>
+                )}
+              </div>
+              {processDone && (
+                <Link href="/feed">
+                  <Button size="lg">View in Feed</Button>
+                </Link>
+              )}
+            </>
           )}
         </div>
       )}

@@ -1,0 +1,21 @@
+{
+  "reels": [
+    {
+      "file": "reel_00_Electron_Shell_Filling_and_Atomic_Struct_video.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_00_Electron_Shell_Filling_and_Atomic_Struct_video.mp4"
+    },
+    {
+      "file": "reel_01_Electron_Shell_Filling_and_Atomic_Struct_video.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_01_Electron_Shell_Filling_and_Atomic_Struct_video.mp4"
+    },
+    {
+      "file": "reel_02_Electron_Shell_Filling_and_Atomic_Struct_slides_only.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_02_Electron_Shell_Filling_and_Atomic_Struct_slides_only.mp4"
+    },
+    {
+      "file": "reel_03_Electron_Shell_Filling_and_Atomic_Struct_slides_only.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_03_Electron_Shell_Filling_and_Atomic_Struct_slides_only.mp4"
+    }
+  ],
+  "count": 4
+}
