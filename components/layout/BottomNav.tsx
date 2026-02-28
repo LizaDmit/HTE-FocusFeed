@@ -33,6 +33,9 @@ export default function BottomNav() {
 
   if (status !== "authenticated") return null;
 
+  const isChatPage = /^\/messages\/.+/.test(pathname);
+  if (isChatPage) return null;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-card/95 backdrop-blur-md border-t border-dark-border safe-bottom">
       <div className="flex items-center justify-around h-14 max-w-lg mx-auto">

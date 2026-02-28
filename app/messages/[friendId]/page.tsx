@@ -88,14 +88,20 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] max-w-md mx-auto">
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-dark-border bg-dark-card/80 backdrop-blur-md shrink-0">
-        <Link href="/messages" className="text-gray-400 hover:text-white">
+    <div className="fixed inset-0 z-20 flex flex-col bg-dark max-w-md mx-auto">
+      <header className="flex items-center gap-3 px-4 py-3 border-b border-dark-border bg-dark-card shrink-0">
+        <Link href="/messages" className="text-gray-400 hover:text-white shrink-0">
           <IoArrowBack size={22} />
         </Link>
-        <Link href={`/profile/${friend.id}`} className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <Avatar username={friend.username} size="sm" />
-          <span className="text-sm font-semibold text-white">@{friend.username}</span>
+          <span className="text-sm font-semibold text-white truncate">@{friend.username}</span>
+        </div>
+        <Link
+          href={`/profile/${friend.id}`}
+          className="shrink-0 px-2.5 py-1 rounded-full bg-dark border border-dark-border text-[11px] text-moonDust-lavender hover:border-moonDust-blue/50 transition-colors"
+        >
+          View Profile
         </Link>
       </header>
 
@@ -131,7 +137,7 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-dark-border p-3 flex gap-2 bg-dark-card/80 backdrop-blur-md shrink-0 safe-bottom">
+      <div className="border-t border-dark-border p-3 flex gap-2 bg-dark-card shrink-0">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
