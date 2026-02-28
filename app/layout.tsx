@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import BottomNav from "@/components/layout/BottomNav";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -11,8 +12,15 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "FocusFeed",
-  description: "Short educational video reels for university courses",
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+  openGraph: {
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

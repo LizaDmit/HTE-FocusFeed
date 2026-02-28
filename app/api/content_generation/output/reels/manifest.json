@@ -1,21 +1,45 @@
 {
   "reels": [
     {
-      "file": "reel_00_Electron_Shell_Filling_and_Atomic_Struct_video.mp4",
-      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_00_Electron_Shell_Filling_and_Atomic_Struct_video.mp4"
+      "file": "reel_00_Requirements_Analysis_Overview___What_is_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_00_Requirements_Analysis_Overview___What_is_character.mp4"
     },
     {
-      "file": "reel_01_Electron_Shell_Filling_and_Atomic_Struct_video.mp4",
-      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_01_Electron_Shell_Filling_and_Atomic_Struct_video.mp4"
+      "file": "reel_01_Functional_Requirements___Understanding__character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_01_Functional_Requirements___Understanding__character.mp4"
     },
     {
-      "file": "reel_02_Electron_Shell_Filling_and_Atomic_Struct_slides_only.mp4",
-      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_02_Electron_Shell_Filling_and_Atomic_Struct_slides_only.mp4"
+      "file": "reel_02_Non-functional_Requirements___Understand_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_02_Non-functional_Requirements___Understand_character.mp4"
     },
     {
-      "file": "reel_03_Electron_Shell_Filling_and_Atomic_Struct_slides_only.mp4",
-      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_03_Electron_Shell_Filling_and_Atomic_Struct_slides_only.mp4"
+      "file": "reel_03_Requirements_Analysis_Overview___Role_of_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_03_Requirements_Analysis_Overview___Role_of_character.mp4"
+    },
+    {
+      "file": "reel_04_Functional_Requirements___Examples_of_Fu_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_04_Functional_Requirements___Examples_of_Fu_character.mp4"
+    },
+    {
+      "file": "reel_05_Non-functional_Requirements___Operationa_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_05_Non-functional_Requirements___Operationa_character.mp4"
+    },
+    {
+      "file": "reel_06_Requirements_Analysis_Overview___Importa_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_06_Requirements_Analysis_Overview___Importa_character.mp4"
+    },
+    {
+      "file": "reel_07_Functional_Requirements___Implementing_F_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_07_Functional_Requirements___Implementing_F_character.mp4"
+    },
+    {
+      "file": "reel_08_Non-functional_Requirements___Performanc_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_08_Non-functional_Requirements___Performanc_character.mp4"
+    },
+    {
+      "file": "reel_09_Non-functional_Requirements___Security_R_character.mp4",
+      "path": "/Users/elizavetadmitrienko/HTE-FocusFeed/app/api/content_generation/output/reels/reel_09_Non-functional_Requirements___Security_R_character.mp4"
     }
   ],
-  "count": 4
+  "count": 10
 }
