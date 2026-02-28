@@ -24,7 +24,7 @@ function FeedContent() {
       if (videoLength.length > 0 && videoLength.length < 3) {
         params.set("videoLength", videoLength.join(","));
       }
-      if (contentTypes.length > 0 && contentTypes.length < 4) {
+      if (contentTypes.length > 0 && contentTypes.length < 5) {
         params.set("contentTypes", contentTypes.join(","));
       }
       const visibleCourseIds = courses.filter((c) => c.visible).map((c) => c.id);

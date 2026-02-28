@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type VideoLength = "short" | "medium" | "long";
-export type ContentType = "SLICED_LECTURE" | "SLIDES_VOICEOVER" | "AI_TEACHER" | "QUIZ";
+export type ContentType = "SLICED_LECTURE" | "SLIDES_VOICEOVER" | "AI_TEACHER" | "OTHER" | "QUIZ";
 
 interface CourseEntry {
   id: string;
@@ -28,7 +28,7 @@ export const usePreferences = create<PreferencesState>()(
   persist(
     (set) => ({
       videoLength: ["short", "medium", "long"],
-      contentTypes: ["SLICED_LECTURE", "SLIDES_VOICEOVER", "AI_TEACHER", "QUIZ"],
+      contentTypes: ["SLICED_LECTURE", "SLIDES_VOICEOVER", "AI_TEACHER", "OTHER", "QUIZ"],
       courses: [],
 
       toggleVideoLength: (len) =>

@@ -19,7 +19,7 @@ export interface MockVideo {
   thumbnailUrl: string | null;
   userId: string;
   courseId: string;
-  type: "SLICED_LECTURE" | "SLIDES_VOICEOVER" | "AI_TEACHER";
+  type: "SLICED_LECTURE" | "SLIDES_VOICEOVER" | "AI_TEACHER" | "OTHER";
   duration: number;
 }
 

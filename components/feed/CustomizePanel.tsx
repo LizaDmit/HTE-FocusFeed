@@ -15,6 +15,7 @@ const CONTENT_TYPES: { id: ContentType; label: string }[] = [
   { id: "SLICED_LECTURE", label: "Sliced Lecture" },
   { id: "SLIDES_VOICEOVER", label: "Slides + Voice" },
   { id: "AI_TEACHER", label: "AI Teacher" },
+  { id: "OTHER", label: "Other" },
   { id: "QUIZ", label: "Quizzes" },
 ];
 

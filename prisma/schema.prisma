@@ -11,6 +11,7 @@ enum VideoType {
   SLICED_LECTURE
   SLIDES_VOICEOVER
   AI_TEACHER
+  OTHER
 }
 
 enum ReactionType {

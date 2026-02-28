@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { IoCloudUploadOutline, IoCheckmarkCircle, IoArrowBack } from "react-icons/io5";
+import { useState, useRef, useEffect } from "react";
+import { IoCloudUploadOutline, IoCheckmarkCircle, IoArrowBack, IoChevronDown } from "react-icons/io5";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Button from "@/components/ui/Button";
@@ -9,7 +9,13 @@ import Toggle from "@/components/ui/Toggle";
 import Input from "@/components/ui/Input";
 
 type Step = "upload" | "options" | "processing";
-type VideoType = "SLICED_LECTURE" | "SLIDES_VOICEOVER" | "AI_TEACHER";
+type VideoType = "SLICED_LECTURE" | "SLIDES_VOICEOVER" | "AI_TEACHER" | "OTHER";
+
+interface CourseOption {
+  id: string;
+  name: string;
+  topics: { name: string }[];
+}
 
 export default function CreateVideoPage() {
   const [step, setStep] = useState<Step>("upload");
@@ -27,6 +33,12 @@ export default function CreateVideoPage() {
   const [autoQuiz, setAutoQuiz] = useState(true);
   const [title, setTitle] = useState("");
 
+  const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
+  const [topicDropdownOpen, setTopicDropdownOpen] = useState(false);
+
   const [processProgress, setProcessProgress] = useState(0);
 
   const { data: session } = useSession();
@@ -34,6 +46,28 @@ export default function CreateVideoPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/courses")
+      .then((r) => r.json())
+      .then((data) => setCourses(data))
+      .catch(() => {});
+  }, []);
+
+  const selectedCourse = courses.find((c) => c.id === selectedCourseId);
+  const courseTopics = selectedCourse?.topics?.map((t) => t.name) || [];
+
+  const toggleTopic = (topic: string) => {
+    setSelectedTopics((prev) =>
+      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+    );
+  };
+
+  const handleCourseSelect = (courseId: string) => {
+    setSelectedCourseId(courseId);
+    setSelectedTopics([]);
+    setCourseDropdownOpen(false);
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -71,9 +105,14 @@ export default function CreateVideoPage() {
     }, 200);
   };
 
+  const canContinue =
+    step === "upload" ? uploaded :
+    step === "options" ? !!selectedCourseId && !!title.trim() :
+    false;
+
   const handleContinue = () => {
     if (step === "upload" && uploaded) setStep("options");
-    else if (step === "options") {
+    else if (step === "options" && selectedCourseId) {
       setStep("processing");
       simulateProcessing();
     }
@@ -92,6 +131,7 @@ export default function CreateVideoPage() {
               title: title || file?.name || "Uploaded Video",
               videoUrl: blobUrl || "/sample-videos/sample1.mp4",
               userId: currentUserId,
+              courseId: selectedCourseId,
               type: videoType,
               duration: duration || 30,
             }),
@@ -107,6 +147,7 @@ export default function CreateVideoPage() {
     { id: "SLICED_LECTURE", label: "Sliced Lecture", desc: "Clip from input video" },
     { id: "SLIDES_VOICEOVER", label: "Slides + Voiceover", desc: "Slides with generated voice" },
     { id: "AI_TEACHER", label: "AI Teacher", desc: "AI-generated teacher video" },
+    { id: "OTHER", label: "Other", desc: "Uploaded as is" },
   ];
 
   return (
@@ -177,7 +218,7 @@ export default function CreateVideoPage() {
               </div>
             </div>
           )}
-          <Button onClick={handleContinue} disabled={!uploaded} className="w-full" size="lg">
+          <Button onClick={handleContinue} disabled={!canContinue} className="w-full" size="lg">
             Continue
           </Button>
         </div>
@@ -191,6 +232,101 @@ export default function CreateVideoPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
+
+          {/* Course selector (required) */}
+          <section>
+            <p className="text-sm font-semibold text-moonDust-purple mb-2">
+              Course <span className="text-red-400">*</span>
+            </p>
+            <div className="relative">
+              <button
+                onClick={() => setCourseDropdownOpen(!courseDropdownOpen)}
+                className={`w-full p-3 rounded-xl border text-left text-sm flex items-center justify-between transition-colors ${
+                  selectedCourseId
+                    ? "border-moonDust-blue bg-moonDust-blue/10 text-white"
+                    : "border-dark-border bg-dark-card text-gray-400"
+                }`}
+              >
+                <span>{selectedCourse?.name || "Select a course..."}</span>
+                <IoChevronDown size={16} className={`transition-transform ${courseDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {courseDropdownOpen && (
+                <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-dark-border bg-dark-card shadow-lg">
+                  {courses.length === 0 ? (
+                    <p className="p-3 text-sm text-gray-400">No courses yet. Create one first.</p>
+                  ) : (
+                    courses.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => handleCourseSelect(c.id)}
+                        className={`w-full p-3 text-left text-sm hover:bg-moonDust-blue/10 transition-colors ${
+                          c.id === selectedCourseId ? "text-moonDust-blue font-medium" : "text-white"
+                        }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Topic multi-select (only if course has topics) */}
+          {selectedCourseId && courseTopics.length > 0 && (
+            <section>
+              <p className="text-sm font-semibold text-moonDust-purple mb-2">Topics</p>
+              <div className="relative">
+                <button
+                  onClick={() => setTopicDropdownOpen(!topicDropdownOpen)}
+                  className="w-full p-3 rounded-xl border border-dark-border bg-dark-card text-left text-sm flex items-center justify-between transition-colors"
+                >
+                  <span className={selectedTopics.length > 0 ? "text-white" : "text-gray-400"}>
+                    {selectedTopics.length > 0
+                      ? `${selectedTopics.length} topic${selectedTopics.length > 1 ? "s" : ""} selected`
+                      : "Select topics (optional)"}
+                  </span>
+                  <IoChevronDown size={16} className={`text-gray-400 transition-transform ${topicDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+                {topicDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-dark-border bg-dark-card shadow-lg">
+                    {courseTopics.map((topic) => {
+                      const isSelected = selectedTopics.includes(topic);
+                      return (
+                        <button
+                          key={topic}
+                          onClick={() => toggleTopic(topic)}
+                          className={`w-full p-3 text-left text-sm flex items-center gap-2 hover:bg-moonDust-blue/10 transition-colors ${
+                            isSelected ? "text-moonDust-blue" : "text-white"
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                            isSelected ? "bg-moonDust-blue border-moonDust-blue" : "border-gray-500"
+                          }`}>
+                            {isSelected && <span className="text-[10px] text-dark font-bold">✓</span>}
+                          </div>
+                          {topic}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {selectedTopics.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {selectedTopics.map((t) => (
+                    <span
+                      key={t}
+                      onClick={() => toggleTopic(t)}
+                      className="px-2.5 py-1 rounded-full bg-moonDust-blue/15 text-moonDust-blue text-xs cursor-pointer hover:bg-moonDust-blue/25 transition-colors"
+                    >
+                      {t} ×
+                    </span>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {duration > 180 && (
             <div className="p-4 rounded-xl bg-moonDust-blue/10 border border-moonDust-blue/20">
@@ -240,7 +376,7 @@ export default function CreateVideoPage() {
 
           <Toggle enabled={autoQuiz} onChange={setAutoQuiz} label="Auto-generate Quizzes" />
 
-          <Button onClick={handleContinue} className="w-full" size="lg">
+          <Button onClick={handleContinue} disabled={!canContinue} className="w-full" size="lg">
             Start Processing
           </Button>
         </div>
