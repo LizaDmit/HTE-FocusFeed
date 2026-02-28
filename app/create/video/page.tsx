@@ -524,7 +524,7 @@ export default function CreateVideoPage() {
               </div>
               <div className="text-center">
                 <p className="text-white font-semibold">
-                  {processDone ? "Processing Complete!" : (<><span>"Processing your video..."</span> <br /> <span>(Please stand by, it can take a while)</span></>)}
+                  {processDone ? "Processing Complete!" : (<><span>&quot;Processing your video...&quot;</span> <br /> <span>(Please stand by, it can take a while)</span></>)}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">{processStage}</p>
                 {processDone && createdCount > 0 && (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { IoPlayOutline, IoTrashOutline, IoCloseOutline } from "react-icons/io5";
 
 interface VideoItem {
@@ -62,11 +63,15 @@ function VideoThumbnail({ video }: { video: VideoItem }) {
     <>
       <canvas ref={canvasRef} className="hidden" />
       {thumbnail ? (
-        <img
-          src={thumbnail}
-          alt={video.title}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <div className="absolute inset-0 w-full h-full relative">
+          <Image
+            src={thumbnail}
+            alt={video.title}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-moonDust-purple/20 to-moonDust-blue/20" />
       )}
