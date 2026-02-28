@@ -16,12 +16,14 @@ interface PreferencesState {
   videoLength: VideoLength[];
   contentTypes: ContentType[];
   courses: CourseEntry[];
+  feedMuted: boolean;
 
   toggleVideoLength: (len: VideoLength) => void;
   toggleContentType: (ct: ContentType) => void;
   addCourse: (course: { id: string; name: string }) => void;
   removeCourse: (id: string) => void;
   toggleCourseVisibility: (id: string) => void;
+  setFeedMuted: (muted: boolean) => void;
 }
 
 export const usePreferences = create<PreferencesState>()(
@@ -30,6 +32,7 @@ export const usePreferences = create<PreferencesState>()(
       videoLength: ["short", "medium", "long"],
       contentTypes: ["SLICED_LECTURE", "SLIDES_VOICEOVER", "AI_TEACHER", "OTHER", "QUIZ"],
       courses: [],
+      feedMuted: false,
 
       toggleVideoLength: (len) =>
         set((s) => ({
@@ -58,6 +61,8 @@ export const usePreferences = create<PreferencesState>()(
         set((s) => ({
           courses: s.courses.map((c) => (c.id === id ? { ...c, visible: !c.visible } : c)),
         })),
+
+      setFeedMuted: (muted) => set({ feedMuted: muted }),
     }),
     { name: "focusfeed-preferences" }
   )

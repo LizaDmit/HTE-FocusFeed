@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { MockQuiz, MockCourse } from "@/lib/mock-data";
 
 interface QuizCardProps {
@@ -53,9 +54,19 @@ export default function QuizCard({ quiz }: QuizCardProps) {
         </div>
 
         {answered && (
-          <p className={`text-center text-sm font-medium ${selected === quiz.correctAnswer ? "text-green-400" : "text-red-400"}`}>
-            {selected === quiz.correctAnswer ? "Correct!" : "Not quite. Try reviewing the video!"}
-          </p>
+          <div className="text-center space-y-1">
+            <p className={`text-sm font-medium ${selected === quiz.correctAnswer ? "text-green-400" : "text-red-400"}`}>
+              {selected === quiz.correctAnswer ? "Correct!" : "Not quite. Try reviewing the topic."}
+            </p>
+            {selected !== quiz.correctAnswer && (
+              <Link
+                href={`/feed?videoId=${quiz.videoId}`}
+                className="inline-block text-sm text-moonDust-blue hover:underline font-medium"
+              >
+                Watch the video to revise →
+              </Link>
+            )}
+          </div>
         )}
       </div>
     </div>

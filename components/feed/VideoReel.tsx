@@ -2,9 +2,10 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { IoThumbsUp, IoThumbsUpOutline, IoThumbsDownOutline, IoChatbubbleOutline, IoShareSocialOutline } from "react-icons/io5";
+import { IoThumbsUp, IoThumbsUpOutline, IoThumbsDownOutline, IoChatbubbleOutline, IoShareSocialOutline, IoVolumeMuteOutline, IoVolumeHighOutline } from "react-icons/io5";
 import PlaybackSlider from "./PlaybackSlider";
 import type { MockVideo, MockUser, MockCourse } from "@/lib/mock-data";
+import { usePreferences } from "@/lib/stores/preferences";
 
 interface VideoReelProps {
   video: MockVideo & { user: MockUser; course: MockCourse; likesCount: number; commentsCount: number };
@@ -16,10 +17,17 @@ interface VideoReelProps {
 
 export default function VideoReel({ video, isActive, onDislike, onComment, onShare }: VideoReelProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { feedMuted, setFeedMuted } = usePreferences();
   const [isPlaying, setIsPlaying] = useState(false);
   const [liked, setLiked] = useState(false);
   const [sliderVisible, setSliderVisible] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = feedMuted;
+  }, [feedMuted]);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -69,7 +77,7 @@ export default function VideoReel({ video, isActive, onDislike, onComment, onSha
         src={video.videoUrl}
         className="h-full w-full object-cover object-top"
         loop
-        muted
+        muted={feedMuted}
         playsInline
         onClick={() => {
           togglePlay();
@@ -88,6 +96,17 @@ export default function VideoReel({ video, isActive, onDislike, onComment, onSha
 
       {/* Icons — above bottom nav (56px) */}
       <div className={`absolute right-3 bottom-[9.5rem] flex flex-col items-center gap-5 ${iconShadow}`}>
+        <button
+          onClick={(e) => { e.stopPropagation(); setFeedMuted(!feedMuted); }}
+          className="flex flex-col items-center gap-1"
+          aria-label={feedMuted ? "Unmute" : "Mute"}
+        >
+          {feedMuted ? (
+            <IoVolumeMuteOutline size={26} className="text-white" />
+          ) : (
+            <IoVolumeHighOutline size={26} className="text-moonDust-blue" />
+          )}
+        </button>
         <button
           onClick={() => setLiked(!liked)}
           className="flex flex-col items-center gap-1"
@@ -116,9 +135,15 @@ export default function VideoReel({ video, isActive, onDislike, onComment, onSha
 
       {/* Title & username — above slider, above bottom nav */}
       <div className={`absolute bottom-[5.5rem] left-4 right-16 ${textShadow}`}>
-        <Link href={`/profile/${video.userId}`} className="text-white font-semibold text-sm hover:underline">
-          @{video.user.username}
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link href={`/profile/${video.userId}`} className="text-white font-semibold text-sm hover:underline">
+            @{video.user.username}
+          </Link>
+          <span className="text-white/70 text-sm">•</span>
+          <span className="text-moonDust-lavender/90 text-sm">
+            {video.course.name}
+          </span>
+        </div>
         <p className="text-white text-sm mt-1">{video.title}</p>
       </div>
 

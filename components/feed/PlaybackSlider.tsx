@@ -18,14 +18,24 @@ export default function PlaybackSlider({ videoRef, visible }: PlaybackSliderProp
     if (!video) return;
 
     const update = () => {
-      if (!isDragging && video.duration) {
+      if (!isDragging && video.duration && isFinite(video.duration)) {
         setProgress(video.currentTime / video.duration);
       }
       rafRef.current = requestAnimationFrame(update);
     };
     rafRef.current = requestAnimationFrame(update);
 
-    return () => cancelAnimationFrame(rafRef.current);
+    const onTimeUpdate = () => {
+      if (!isDragging && video.duration && isFinite(video.duration)) {
+        setProgress(video.currentTime / video.duration);
+      }
+    };
+    video.addEventListener("timeupdate", onTimeUpdate);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      video.removeEventListener("timeupdate", onTimeUpdate);
+    };
   }, [videoRef, isDragging]);
 
   const seek = useCallback(
@@ -79,9 +89,9 @@ export default function PlaybackSlider({ videoRef, visible }: PlaybackSliderProp
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <div className="w-full h-1 rounded-full bg-moonDust-lavender/20 group-hover:h-1.5 transition-all">
+        <div className="relative w-full h-1 rounded-full bg-moonDust-lavender/20 group-hover:h-1.5 transition-all overflow-hidden">
           <div
-            className="h-full rounded-full bg-moonDust-blue transition-[width] duration-75"
+            className="absolute inset-y-0 left-0 rounded-full bg-moonDust-blue transition-[width] duration-75"
             style={{ width: `${progress * 100}%` }}
           />
         </div>
